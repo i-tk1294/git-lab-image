@@ -1,0 +1,23 @@
+name: Pull GitLab Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull GitLab CE image
+        run: docker pull gitlab/gitlab-ce:latest
+
+      - name: Save image as tar
+        run: docker save gitlab/gitlab-ce:latest -o gitlab-ce.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitlab-image
+          path: gitlab-ce.tar
