@@ -1,0 +1,10 @@
+- name: Prepare dependencies (offline)
+  run: |
+    mvn -B dependency:go-offline
+    mvn -B -DskipTests verify
+
+- name: Archive Maven repository
+  uses: actions/upload-artifact@v4
+  with:
+    name: maven-repo
+    path: ~/.m2/repository
