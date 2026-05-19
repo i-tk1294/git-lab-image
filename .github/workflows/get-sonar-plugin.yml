@@ -1,10 +1,29 @@
-- name: Prepare dependencies (offline)
-  run: |
-    mvn -B dependency:go-offline
-    mvn -B -DskipTests verify
+name: Get Sonar Plugin
 
-- name: Archive Maven repository
-  uses: actions/upload-artifact@v4
-  with:
-    name: maven-repo
-    path: ~/.m2/repository
+on:
+  workflow_dispatch:
+
+jobs:
+  get-plugin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Prepare dependencies (offline)
+        run: |
+          mvn -B dependency:go-offline
+          mvn -B -DskipTests verify
+
+      - name: Archive Maven repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository
