@@ -1,0 +1,23 @@
+name: Pull SonarQube Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull SonarQube image
+        run: docker pull sonarqube:latest
+
+      - name: Save image as tar
+        run: docker save sonarqube:latest -o sonarqube.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonarqube-image
+          path: sonarqube.tar
