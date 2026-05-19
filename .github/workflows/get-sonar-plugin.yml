@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -17,13 +18,20 @@ jobs:
           java-version: 17
           cache: maven
 
+      - name: Move to project root (pom.xml のある場所に変更)
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Searching for pom.xml..."
+          find . -name pom.xml
+
       - name: Prepare dependencies (offline)
         run: |
-          mvn -B dependency:go-offline
-          mvn -B -DskipTests verify
+          mvn -B -Dmaven.repo.local=./maven-repo dependency:go-offline
+          mvn -B -Dmaven.repo.local=./maven-repo -DskipTests verify
 
       - name: Archive Maven repository
         uses: actions/upload-artifact@v4
         with:
           name: maven-repo
-          path: ~/.m2/repository
+          path: maven-repo
