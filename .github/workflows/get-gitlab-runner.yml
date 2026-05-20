@@ -1,0 +1,26 @@
+name: Get GitLab Runner Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get-gitlab-runner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull GitLab Runner image
+        run: |
+          docker pull gitlab/gitlab-runner:latest
+
+      - name: Save image to tar
+        run: |
+          docker save gitlab/gitlab-runner:latest -o gitlab-runner.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitlab-runner-image
+          path: gitlab-runner.tar
