@@ -1,0 +1,26 @@
+name: Get Maven Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get-maven-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull Maven image
+        run: |
+          docker pull maven:3.8.6-openjdk-11
+
+      - name: Save image to tar
+        run: |
+          docker save maven:3.8.6-openjdk-11 -o maven-3.8.6-openjdk-11.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-3.8.6-openjdk-11
+          path: maven-3.8.6-openjdk-11.tar
