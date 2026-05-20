@@ -1,0 +1,26 @@
+name: Get GitLab Runner Helper Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get-helper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull GitLab Runner Helper image
+        run: |
+          docker pull gitlab/gitlab-runner-helper:x86_64-v18.11.3
+
+      - name: Save image to tar
+        run: |
+          docker save gitlab/gitlab-runner-helper:x86_64-v18.11.3 -o gitlab-runner-helper-v18.11.3.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitlab-runner-helper-v18.11.3
+          path: gitlab-runner-helper-v18.11.3.tar
