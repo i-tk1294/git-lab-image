@@ -1,23 +1,26 @@
-name: Build with Maven
+name: Get Maven 3.9.6 Temurin 17 Image
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  get-maven:
     runs-on: ubuntu-latest
-    container:
-      image: maven:3.9.6-eclipse-temurin-17
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build
-        run: mvn -B package
+      - name: Pull Maven image
+        run: |
+          docker pull --disable-content-trust maven:3.9.6-eclipse-temurin-17
+
+      - name: Save image to tar
+        run: |
+          docker save maven:3.9.6-eclipse-temurin-17 -o maven-3.9.6-eclipse-temurin-17.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-result
-          path: target/*.jar
+          name: maven-3.9.6-eclipse-temurin-17
+          path: maven-3.9.6-eclipse-temurin-17.tar
