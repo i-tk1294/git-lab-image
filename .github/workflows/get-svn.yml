@@ -1,0 +1,52 @@
+name: build-svn-bundle-rel10
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dnf rpm2cpio cpio
+
+      - name: Enable RHEL10 repo (Rocky Linux 10 mirror)
+        run: |
+          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/
+          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/
+
+      - name: Download SVN and dependencies
+        run: |
+          mkdir rpms
+          cd rpms
+          sudo dnf download \
+            subversion \
+            subversion-libs \
+            apr \
+            apr-util \
+            sqlite-libs \
+            serf \
+            utf8proc \
+            libzstd \
+            liblz4
+
+      - name: Extract RPMs
+        run: |
+          mkdir -p svn_bundle
+          for f in rpms/*.rpm; do
+            rpm2cpio "$f" | cpio -idmv -D svn_bundle
+          done
+
+      - name: Zip bundle
+        run: |
+          cd svn_bundle
+          zip -r ../svn_bundle_rel10.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: svn-bundle-rel10
+          path: svn_bundle_rel10.zip
