@@ -21,18 +21,58 @@ jobs:
           BASEOS=https://ftp.riken.jp/Linux/rocky/9/BaseOS/x86_64/os
           APPSTREAM=https://ftp.riken.jp/Linux/rocky/9/AppStream/x86_64/os
 
-          fetch_from_repo() {
-            local repo_url=$1
-            local pkg_pattern=$2
+          # --- primary.xml.gz を取得して展開 ---
+          curl -s $APPSTREAM/repodata/repomd.xml -o repomd.xml
+          primary_app=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
+          curl -s $APPSTREAM/$primary_app -o primary-app.xml.gz
+          gunzip -f primary-app.xml.gz
 
-            echo "Fetching metadata from $repo_url"
+          curl -s $BASEOS/repodata/repomd.xml -o repomd.xml
+          primary_base=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
+          curl -s $BASEOS/$primary_base -o primary-base.xml.gz
+          gunzip -f primary-base.xml.gz
 
-            curl -s $repo_url/repodata/repomd.xml -o repomd.xml
+          # --- RPM を抽出してダウンロード ---
+          get_rpm() {
+            xml=$1
+            pattern=$2
+            repo=$3
 
-            primary=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
-            echo "Primary metadata: $primary"
+            rpm=$(xmlstarlet sel -t -m "//package[name[contains(., '$pattern')]]" \
+                  -v "location/@href" -n $xml | sort -V | tail -1)
 
-            curl -s $repo_url/$primary -o primary.xml.gz
-            gunzip -f primary.xml.gz
+            echo "Downloading: $rpm"
+            wget "$repo/$rpm"
+          }
 
-            rpm=$(xmlstarlet sel -t -m "//package[name[contains(., '$pkg_pattern')]]" \
+          # SVN
+          get_rpm primary-app.xml "subversion-" $APPSTREAM
+          get_rpm primary-app.xml "subversion-libs-" $APPSTREAM
+
+          # Dependencies
+          get_rpm primary-base.xml "apr-" $BASEOS
+          get_rpm primary-base.xml "apr-util-" $BASEOS
+          get_rpm primary-base.xml "sqlite-libs-" $BASEOS
+          get_rpm primary-app.xml "serf-" $APPSTREAM
+          get_rpm primary-base.xml "utf8proc-" $BASEOS
+          get_rpm primary-base.xml "libzstd-" $BASEOS
+          get_rpm primary-base.xml "liblz4-" $BASEOS
+
+      - name: Extract RPMs
+        run: |
+          mkdir -p svn_bundle
+          for f in rpms/*.rpm; do
+            echo "Extracting $f"
+            rpm2cpio "$f" | cpio -idmv -D svn_bundle
+          done
+
+      - name: Zip bundle
+        run: |
+          cd svn_bundle
+          zip -r ../svn_bundle_rel9.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: svn-bundle-rel9
+          path: svn_bundle_rel9.zip
