@@ -18,17 +18,17 @@ jobs:
           mkdir rpms
           cd rpms
 
-          BASEOS=https://ftp.riken.jp/Linux/rocky/9/BaseOS/x86_64/os
-          APPSTREAM=https://ftp.riken.jp/Linux/rocky/9/AppStream/x86_64/os
+          BASEOS=https://mirror.sfo12.us.leaseweb.net/rocky/9/BaseOS/x86_64/os
+          APPSTREAM=https://mirror.sfo12.us.leaseweb.net/rocky/9/AppStream/x86_64/os
 
           # --- primary.xml.gz を取得して展開 ---
-          curl -s $APPSTREAM/repodata/repomd.xml -o repomd.xml
-          primary_app=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
+          curl -s $APPSTREAM/repodata/repomd.xml -o repomd-app.xml
+          primary_app=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
           curl -s $APPSTREAM/$primary_app -o primary-app.xml.gz
           gunzip -f primary-app.xml.gz
 
-          curl -s $BASEOS/repodata/repomd.xml -o repomd.xml
-          primary_base=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
+          curl -s $BASEOS/repodata/repomd.xml -o repomd-base.xml
+          primary_base=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
           curl -s $BASEOS/$primary_base -o primary-base.xml.gz
           gunzip -f primary-base.xml.gz
 
