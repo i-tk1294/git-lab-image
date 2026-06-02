@@ -21,32 +21,46 @@ jobs:
           BASEOS=https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/Packages
           APPSTREAM=https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/Packages
 
-          # Function to fetch latest RPM by pattern
-          fetch_latest() {
-            local url=$1
+          # 探索して RPM を見つける関数
+          fetch_rpm() {
+            local base_url=$1
             local pattern=$2
-            local rpm=$(curl -s $url/ | grep -oP "$pattern" | sort -V | tail -1)
-            echo "Downloading: $rpm"
-            wget "$url/$rpm"
+
+            # a〜z のサブフォルダを探索
+            for letter in {a..z}; do
+              url="$base_url/$letter"
+              echo "Checking $url ..."
+              list=$(curl -s "$url/" | grep -oP "$pattern" | sort -V | tail -1)
+
+              if [ -n "$list" ]; then
+                echo "Found: $list"
+                wget "$url/$list"
+                return
+              fi
+            done
+
+            echo "ERROR: $pattern not found in $base_url"
+            exit 1
           }
 
           # SVN
-          fetch_latest $APPSTREAM "subversion-[0-9].*\.rpm"
-          fetch_latest $APPSTREAM "subversion-libs-[0-9].*\.rpm"
+          fetch_rpm $APPSTREAM "subversion-[0-9].*\.rpm"
+          fetch_rpm $APPSTREAM "subversion-libs-[0-9].*\.rpm"
 
           # Dependencies
-          fetch_latest $BASEOS "apr-[0-9].*\.rpm"
-          fetch_latest $BASEOS "apr-util-[0-9].*\.rpm"
-          fetch_latest $BASEOS "sqlite-libs-[0-9].*\.rpm"
-          fetch_latest $APPSTREAM "serf-[0-9].*\.rpm"
-          fetch_latest $BASEOS "utf8proc-[0-9].*\.rpm"
-          fetch_latest $BASEOS "libzstd-[0-9].*\.rpm"
-          fetch_latest $BASEOS "liblz4-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "apr-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "apr-util-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "sqlite-libs-[0-9].*\.rpm"
+          fetch_rpm $APPSTREAM "serf-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "utf8proc-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "libzstd-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "liblz4-[0-9].*\.rpm"
 
       - name: Extract RPMs
         run: |
           mkdir -p svn_bundle
           for f in rpms/*.rpm; do
+            echo "Extracting $f"
             rpm2cpio "$f" | cpio -idmv -D svn_bundle
           done
 
