@@ -18,8 +18,9 @@ jobs:
           mkdir rpms
           cd rpms
 
-          BASEOS=https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os
-          APPSTREAM=https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os
+          BASEOS=https://ftp.riken.jp/Linux/rocky/10/BaseOS/x86_64/os
+          APPSTREAM=https://ftp.riken.jp/Linux/rocky/10/AppStream/x86_64/os
+
 
           fetch_from_repo() {
             local repo_url=$1
