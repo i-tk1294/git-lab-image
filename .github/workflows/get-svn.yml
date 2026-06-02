@@ -11,7 +11,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm2cpio cpio wget
+          sudo apt-get install -y rpm2cpio cpio wget curl
 
       - name: Download SVN and dependencies (Rocky Linux 10)
         run: |
@@ -21,15 +21,27 @@ jobs:
           BASEOS=https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/Packages
           APPSTREAM=https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/Packages
 
-          wget $APPSTREAM/s/subversion-*.rpm
-          wget $APPSTREAM/s/subversion-libs-*.rpm
-          wget $BASEOS/a/apr-*.rpm
-          wget $BASEOS/a/apr-util-*.rpm
-          wget $BASEOS/s/sqlite-libs-*.rpm
-          wget $APPSTREAM/s/serf-*.rpm
-          wget $BASEOS/u/utf8proc-*.rpm
-          wget $BASEOS/l/libzstd-*.rpm
-          wget $BASEOS/l/liblz4-*.rpm
+          # Function to fetch latest RPM by pattern
+          fetch_latest() {
+            local url=$1
+            local pattern=$2
+            local rpm=$(curl -s $url/ | grep -oP "$pattern" | sort -V | tail -1)
+            echo "Downloading: $rpm"
+            wget "$url/$rpm"
+          }
+
+          # SVN
+          fetch_latest $APPSTREAM "subversion-[0-9].*\.rpm"
+          fetch_latest $APPSTREAM "subversion-libs-[0-9].*\.rpm"
+
+          # Dependencies
+          fetch_latest $BASEOS "apr-[0-9].*\.rpm"
+          fetch_latest $BASEOS "apr-util-[0-9].*\.rpm"
+          fetch_latest $BASEOS "sqlite-libs-[0-9].*\.rpm"
+          fetch_latest $APPSTREAM "serf-[0-9].*\.rpm"
+          fetch_latest $BASEOS "utf8proc-[0-9].*\.rpm"
+          fetch_latest $BASEOS "libzstd-[0-9].*\.rpm"
+          fetch_latest $BASEOS "liblz4-[0-9].*\.rpm"
 
       - name: Extract RPMs
         run: |
