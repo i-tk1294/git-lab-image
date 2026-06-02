@@ -11,27 +11,25 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dnf rpm2cpio cpio
+          sudo apt-get install -y rpm2cpio cpio wget
 
-      - name: Enable RHEL10 repo (Rocky Linux 10 mirror)
-        run: |
-          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/
-          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/
-
-      - name: Download SVN and dependencies
+      - name: Download SVN and dependencies (Rocky Linux 10)
         run: |
           mkdir rpms
           cd rpms
-          sudo dnf download \
-            subversion \
-            subversion-libs \
-            apr \
-            apr-util \
-            sqlite-libs \
-            serf \
-            utf8proc \
-            libzstd \
-            liblz4
+
+          BASEOS=https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/Packages
+          APPSTREAM=https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/Packages
+
+          wget $APPSTREAM/s/subversion-*.rpm
+          wget $APPSTREAM/s/subversion-libs-*.rpm
+          wget $BASEOS/a/apr-*.rpm
+          wget $BASEOS/a/apr-util-*.rpm
+          wget $BASEOS/s/sqlite-libs-*.rpm
+          wget $APPSTREAM/s/serf-*.rpm
+          wget $BASEOS/u/utf8proc-*.rpm
+          wget $BASEOS/l/libzstd-*.rpm
+          wget $BASEOS/l/liblz4-*.rpm
 
       - name: Extract RPMs
         run: |
