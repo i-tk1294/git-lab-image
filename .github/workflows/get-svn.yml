@@ -21,20 +21,25 @@ jobs:
           BASEOS=https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/Packages
           APPSTREAM=https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/Packages
 
-          # 探索して RPM を見つける関数
+          # href="" の中だけを抽出する関数
           fetch_rpm() {
             local base_url=$1
             local pattern=$2
 
-            # a〜z のサブフォルダを探索
             for letter in {a..z}; do
               url="$base_url/$letter"
               echo "Checking $url ..."
-              list=$(curl -s "$url/" | grep -oP "$pattern" | sort -V | tail -1)
 
-              if [ -n "$list" ]; then
-                echo "Found: $list"
-                wget "$url/$list"
+              # href="xxxx.rpm" の中身だけを抜き出す
+              rpm=$(curl -s "$url/" \
+                | grep -oP 'href="\K[^"]+\.rpm' \
+                | grep -E "$pattern" \
+                | sort -V \
+                | tail -1)
+
+              if [ -n "$rpm" ]; then
+                echo "Found: $rpm"
+                wget "$url/$rpm"
                 return
               fi
             done
@@ -44,17 +49,17 @@ jobs:
           }
 
           # SVN
-          fetch_rpm $APPSTREAM "subversion-[0-9].*\.rpm"
-          fetch_rpm $APPSTREAM "subversion-libs-[0-9].*\.rpm"
+          fetch_rpm $APPSTREAM "subversion-[0-9]"
+          fetch_rpm $APPSTREAM "subversion-libs-[0-9]"
 
           # Dependencies
-          fetch_rpm $BASEOS "apr-[0-9].*\.rpm"
-          fetch_rpm $BASEOS "apr-util-[0-9].*\.rpm"
-          fetch_rpm $BASEOS "sqlite-libs-[0-9].*\.rpm"
-          fetch_rpm $APPSTREAM "serf-[0-9].*\.rpm"
-          fetch_rpm $BASEOS "utf8proc-[0-9].*\.rpm"
-          fetch_rpm $BASEOS "libzstd-[0-9].*\.rpm"
-          fetch_rpm $BASEOS "liblz4-[0-9].*\.rpm"
+          fetch_rpm $BASEOS "apr-[0-9]"
+          fetch_rpm $BASEOS "apr-util-[0-9]"
+          fetch_rpm $BASEOS "sqlite-libs-[0-9]"
+          fetch_rpm $APPSTREAM "serf-[0-9]"
+          fetch_rpm $BASEOS "utf8proc-[0-9]"
+          fetch_rpm $BASEOS "libzstd-[0-9]"
+          fetch_rpm $BASEOS "liblz4-[0-9]"
 
       - name: Extract RPMs
         run: |
