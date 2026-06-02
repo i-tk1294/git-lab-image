@@ -1,4 +1,4 @@
-name: build-svn-bundle-rel10
+name: build-svn-bundle-rel9
 
 on:
   workflow_dispatch:
@@ -13,14 +13,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm2cpio cpio wget curl gzip xmlstarlet
 
-      - name: Download SVN and dependencies (Rocky Linux 10)
+      - name: Download SVN and dependencies (Rocky Linux 9)
         run: |
           mkdir rpms
           cd rpms
 
-          BASEOS=https://ftp.riken.jp/Linux/rocky/10/BaseOS/x86_64/os
-          APPSTREAM=https://ftp.riken.jp/Linux/rocky/10/AppStream/x86_64/os
-
+          BASEOS=https://ftp.riken.jp/Linux/rocky/9/BaseOS/x86_64/os
+          APPSTREAM=https://ftp.riken.jp/Linux/rocky/9/AppStream/x86_64/os
 
           fetch_from_repo() {
             local repo_url=$1
@@ -28,58 +27,12 @@ jobs:
 
             echo "Fetching metadata from $repo_url"
 
-            # repomd.xml を取得
             curl -s $repo_url/repodata/repomd.xml -o repomd.xml
 
-            # primary.xml.gz のパスを取得
             primary=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd.xml)
             echo "Primary metadata: $primary"
 
-            # primary.xml.gz を取得して展開
             curl -s $repo_url/$primary -o primary.xml.gz
             gunzip -f primary.xml.gz
 
-            # RPM 名を抽出
             rpm=$(xmlstarlet sel -t -m "//package[name[contains(., '$pkg_pattern')]]" \
-                  -v "location/@href" -n primary.xml | sort -V | tail -1)
-
-            if [ -z "$rpm" ]; then
-              echo "ERROR: $pkg_pattern not found in $repo_url"
-              exit 1
-            fi
-
-            echo "Downloading: $rpm"
-            wget "$repo_url/$rpm"
-          }
-
-          # SVN
-          fetch_from_repo $APPSTREAM "subversion-"
-          fetch_from_repo $APPSTREAM "subversion-libs-"
-
-          # Dependencies
-          fetch_from_repo $BASEOS "apr-"
-          fetch_from_repo $BASEOS "apr-util-"
-          fetch_from_repo $BASEOS "sqlite-libs-"
-          fetch_from_repo $APPSTREAM "serf-"
-          fetch_from_repo $BASEOS "utf8proc-"
-          fetch_from_repo $BASEOS "libzstd-"
-          fetch_from_repo $BASEOS "liblz4-"
-
-      - name: Extract RPMs
-        run: |
-          mkdir -p svn_bundle
-          for f in rpms/*.rpm; do
-            echo "Extracting $f"
-            rpm2cpio "$f" | cpio -idmv -D svn_bundle
-          done
-
-      - name: Zip bundle
-        run: |
-          cd svn_bundle
-          zip -r ../svn_bundle_rel10.zip .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: svn-bundle-rel10
-          path: svn_bundle_rel10.zip
