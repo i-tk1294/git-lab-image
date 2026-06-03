@@ -13,13 +13,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm2cpio cpio wget
 
-      - name: Download SVN and dependencies (Rocky Linux 9)
+      - name: Download SVN and dependencies (Rocky Linux 9 Vault)
         run: |
           mkdir rpms
           cd rpms
 
-          BASEOS=https://mirror.sfo12.us.leaseweb.net/rocky/9/BaseOS/x86_64/os/Packages
-          APPSTREAM=https://mirror.sfo12.us.leaseweb.net/rocky/9/AppStream/x86_64/os/Packages
+          BASEOS=https://dl.rockylinux.org/vault/rocky/9/BaseOS/x86_64/os/Packages
+          APPSTREAM=https://dl.rockylinux.org/vault/rocky/9/AppStream/x86_64/os/Packages
 
           # SVN
           wget $APPSTREAM/s/subversion-1.14.2-7.el9.x86_64.rpm
