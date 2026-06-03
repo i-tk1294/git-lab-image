@@ -21,25 +21,40 @@ jobs:
           BASEOS=https://mirror.sfo12.us.leaseweb.net/rocky/9/BaseOS/x86_64/os
           APPSTREAM=https://mirror.sfo12.us.leaseweb.net/rocky/9/AppStream/x86_64/os
 
-          # --- primary.xml.gz を取得して展開 ---
+          echo "=== Fetching primary metadata ==="
+
+          # --- AppStream primary.xml ---
           curl -s $APPSTREAM/repodata/repomd.xml -o repomd-app.xml
-          primary_app=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
+          primary_app=$(xmlstarlet sel --nonet --dropdtd -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
           curl -s $APPSTREAM/$primary_app -o primary-app.xml.gz
           gunzip -f primary-app.xml.gz
+          xmlstarlet ed --dropdtd primary-app.xml > primary-app-clean.xml
+          mv primary-app-clean.xml primary-app.xml
 
+          # --- BaseOS primary.xml ---
           curl -s $BASEOS/repodata/repomd.xml -o repomd-base.xml
-          primary_base=$(xmlstarlet sel -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
+          primary_base=$(xmlstarlet sel --nonet --dropdtd -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
           curl -s $BASEOS/$primary_base -o primary-base.xml.gz
           gunzip -f primary-base.xml.gz
+          xmlstarlet ed --dropdtd primary-base.xml > primary-base-clean.xml
+          mv primary-base-clean.xml primary-base.xml
 
-          # --- RPM を抽出してダウンロード ---
+          echo "=== Extracting RPM URLs ==="
+
           get_rpm() {
             xml=$1
             pattern=$2
             repo=$3
 
-            rpm=$(xmlstarlet sel -t -m "//package[name[contains(., '$pattern')]]" \
-                  -v "location/@href" -n $xml | sort -V | tail -1)
+            rpm=$(xmlstarlet sel --nonet --dropdtd \
+                  -t -m "//package[name[contains(., '$pattern')]]" \
+                  -v "location/@href" -n "$xml" \
+                  | sort -V | tail -1)
+
+            if [ -z "$rpm" ]; then
+              echo "ERROR: pattern '$pattern' not found in $xml"
+              exit 1
+            fi
 
             echo "Downloading: $rpm"
             wget "$repo/$rpm"
