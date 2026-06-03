@@ -1,4 +1,4 @@
-name: build-svn-bundle-el9
+name: build-svn-bundle-el8
 
 on:
   workflow_dispatch:
@@ -13,26 +13,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm2cpio cpio wget
 
-      - name: Download SVN and dependencies (AlmaLinux 9)
+      - name: Download SVN and dependencies (Oracle Linux 8)
         run: |
           mkdir rpms
           cd rpms
 
-          BASEOS=https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/Packages
-          APPSTREAM=https://repo.almalinux.org/almalinux/9/AppStream/x86_64/os/Packages
-
           # SVN
-          wget $APPSTREAM/s/subversion-1.14.2-7.el9.x86_64.rpm
-          wget $APPSTREAM/s/subversion-libs-1.14.2-7.el9.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/subversion-1.10.2-5.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/subversion-libs-1.10.2-5.el8.x86_64.rpm
 
           # Dependencies
-          wget $BASEOS/a/apr-1.7.0-12.el9.x86_64.rpm
-          wget $BASEOS/a/apr-util-1.6.1-20.el9.x86_64.rpm
-          wget $BASEOS/s/sqlite-libs-3.34.1-6.el9.x86_64.rpm
-          wget $APPSTREAM/s/serf-1.3.9-16.el9.x86_64.rpm
-          wget $BASEOS/u/utf8proc-2.6.1-3.el9.x86_64.rpm
-          wget $BASEOS/l/libzstd-1.5.2-7.el9.x86_64.rpm
-          wget $BASEOS/l/liblz4-1.9.3-5.el9.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/apr-1.6.3-12.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/apr-util-1.6.1-6.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/sqlite-libs-3.26.0-15.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/serf-1.3.9-10.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/utf8proc-2.1.1-4.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/libzstd-1.4.4-1.el8.x86_64.rpm
+          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/liblz4-1.8.3-3.el8.x86_64.rpm
 
       - name: Extract RPMs
         run: |
@@ -45,10 +42,10 @@ jobs:
       - name: Zip bundle
         run: |
           cd svn_bundle
-          zip -r ../svn_bundle_el9.zip .
+          zip -r ../svn_bundle_el8.zip .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: svn-bundle-el9
-          path: svn_bundle_el9.zip
+          name: svn-bundle-el8
+          path: svn_bundle_el8.zip
