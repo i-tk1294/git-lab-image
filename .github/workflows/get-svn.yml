@@ -1,4 +1,4 @@
-name: build-svn-bundle-el8
+name: build-svn-from-source
 
 on:
   workflow_dispatch:
@@ -8,44 +8,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install tools
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm2cpio cpio wget
+          sudo apt-get install -y \
+            build-essential \
+            libapr1-dev \
+            libaprutil1-dev \
+            libsqlite3-dev \
+            libserf-dev \
+            liblz4-dev \
+            libzstd-dev \
+            libutf8proc-dev \
+            wget \
+            unzip
 
-      - name: Download SVN and dependencies (Oracle Linux 8)
+      - name: Download Subversion source
         run: |
-          mkdir rpms
-          cd rpms
+          wget https://downloads.apache.org/subversion/subversion-1.14.3.tar.gz
+          tar xf subversion-1.14.3.tar.gz
 
-          # SVN
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/subversion-1.10.2-5.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/subversion-libs-1.10.2-5.el8.x86_64.rpm
-
-          # Dependencies
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/apr-1.6.3-12.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/apr-util-1.6.1-6.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/sqlite-libs-3.26.0-15.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/serf-1.3.9-10.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/utf8proc-2.1.1-4.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/libzstd-1.4.4-1.el8.x86_64.rpm
-          wget https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/getPackage/liblz4-1.8.3-3.el8.x86_64.rpm
-
-      - name: Extract RPMs
+      - name: Build Subversion
         run: |
-          mkdir -p svn_bundle
-          for f in rpms/*.rpm; do
-            echo "Extracting $f"
-            rpm2cpio "$f" | cpio -idmv -D svn_bundle
-          done
+          cd subversion-1.14.3
+          ./configure --prefix=/opt/svn --without-gnome-keyring --without-kwallet
+          make -j$(nproc)
+          make install
 
-      - name: Zip bundle
+      - name: Package SVN bundle
         run: |
-          cd svn_bundle
-          zip -r ../svn_bundle_el8.zip .
+          cd /opt
+          zip -r svn_bundle_source.zip svn
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: svn-bundle-el8
-          path: svn_bundle_el8.zip
+          name: svn-bundle-source
+          path: /opt/svn_bundle_source.zip
