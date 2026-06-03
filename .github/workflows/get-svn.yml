@@ -23,17 +23,27 @@ jobs:
 
           echo "=== Fetching primary metadata ==="
 
-          # --- AppStream primary.xml ---
+          # --- AppStream repomd.xml ---
           curl -s $APPSTREAM/repodata/repomd.xml -o repomd-app.xml
-          primary_app=$(xmlstarlet sel --nonet --dropdtd -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
+          xmlstarlet ed --dropdtd repomd-app.xml > repomd-app-clean.xml
+          mv repomd-app-clean.xml repomd-app.xml
+
+          primary_app=$(xmlstarlet sel --nonet --dropdtd \
+                        -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
+
           curl -s $APPSTREAM/$primary_app -o primary-app.xml.gz
           gunzip -f primary-app.xml.gz
           xmlstarlet ed --dropdtd primary-app.xml > primary-app-clean.xml
           mv primary-app-clean.xml primary-app.xml
 
-          # --- BaseOS primary.xml ---
+          # --- BaseOS repomd.xml ---
           curl -s $BASEOS/repodata/repomd.xml -o repomd-base.xml
-          primary_base=$(xmlstarlet sel --nonet --dropdtd -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
+          xmlstarlet ed --dropdtd repomd-base.xml > repomd-base-clean.xml
+          mv repomd-base-clean.xml repomd-base.xml
+
+          primary_base=$(xmlstarlet sel --nonet --dropdtd \
+                         -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
+
           curl -s $BASEOS/$primary_base -o primary-base.xml.gz
           gunzip -f primary-base.xml.gz
           xmlstarlet ed --dropdtd primary-base.xml > primary-base-clean.xml
