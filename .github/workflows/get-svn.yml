@@ -11,77 +11,28 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm2cpio cpio wget curl gzip xmlstarlet
+          sudo apt-get install -y rpm2cpio cpio wget
 
       - name: Download SVN and dependencies (Rocky Linux 9)
         run: |
           mkdir rpms
           cd rpms
 
-          BASEOS=https://mirror.sfo12.us.leaseweb.net/rocky/9/BaseOS/x86_64/os
-          APPSTREAM=https://mirror.sfo12.us.leaseweb.net/rocky/9/AppStream/x86_64/os
-
-          echo "=== Fetching primary metadata ==="
-
-          # --- AppStream repomd.xml ---
-          curl -s $APPSTREAM/repodata/repomd.xml -o repomd-app.xml
-          xmlstarlet ed --dropdtd repomd-app.xml > repomd-app-clean.xml
-          mv repomd-app-clean.xml repomd-app.xml
-
-          primary_app=$(xmlstarlet sel --nonet --dropdtd \
-                        -t -v "//data[@type='primary']/location/@href" repomd-app.xml)
-
-          curl -s $APPSTREAM/$primary_app -o primary-app.xml.gz
-          gunzip -f primary-app.xml.gz
-          xmlstarlet ed --dropdtd primary-app.xml > primary-app-clean.xml
-          mv primary-app-clean.xml primary-app.xml
-
-          # --- BaseOS repomd.xml ---
-          curl -s $BASEOS/repodata/repomd.xml -o repomd-base.xml
-          xmlstarlet ed --dropdtd repomd-base.xml > repomd-base-clean.xml
-          mv repomd-base-clean.xml repomd-base.xml
-
-          primary_base=$(xmlstarlet sel --nonet --dropdtd \
-                         -t -v "//data[@type='primary']/location/@href" repomd-base.xml)
-
-          curl -s $BASEOS/$primary_base -o primary-base.xml.gz
-          gunzip -f primary-base.xml.gz
-          xmlstarlet ed --dropdtd primary-base.xml > primary-base-clean.xml
-          mv primary-base-clean.xml primary-base.xml
-
-          echo "=== Extracting RPM URLs ==="
-
-          get_rpm() {
-            xml=$1
-            pattern=$2
-            repo=$3
-
-            rpm=$(xmlstarlet sel --nonet --dropdtd \
-                  -t -m "//package[name[contains(., '$pattern')]]" \
-                  -v "location/@href" -n "$xml" \
-                  | sort -V | tail -1)
-
-            if [ -z "$rpm" ]; then
-              echo "ERROR: pattern '$pattern' not found in $xml"
-              exit 1
-            fi
-
-            echo "Downloading: $rpm"
-            wget "$repo/$rpm"
-          }
+          BASEOS=https://mirror.sfo12.us.leaseweb.net/rocky/9/BaseOS/x86_64/os/Packages
+          APPSTREAM=https://mirror.sfo12.us.leaseweb.net/rocky/9/AppStream/x86_64/os/Packages
 
           # SVN
-          get_rpm primary-app.xml "subversion-" $APPSTREAM
-          get_rpm primary-app.xml "subversion-libs-" $APPSTREAM
+          wget $APPSTREAM/s/subversion-1.14.2-7.el9.x86_64.rpm
+          wget $APPSTREAM/s/subversion-libs-1.14.2-7.el9.x86_64.rpm
 
           # Dependencies
-          get_rpm primary-base.xml "apr-" $BASEOS
-          get_rpm primary-base.xml "apr-util-" $BASEOS
-          get_rpm primary-base.xml "sqlite-libs-" $BASEOS
-          get_rpm primary-app.xml "serf-" $APPSTREAM
-          get_rpm primary-base.xml "utf8proc-" $BASEOS
-          get_rpm primary-base.xml "libzstd-" $BASEOS
-          get_rpm primary-base.xml "liblz4-" $BASEOS
+          wget $BASEOS/a/apr-1.7.0-12.el9.x86_64.rpm
+          wget $BASEOS/a/apr-util-1.6.1-20.el9.x86_64.rpm
+          wget $BASEOS/s/sqlite-libs-3.34.1-6.el9.x86_64.rpm
+          wget $APPSTREAM/s/serf-1.3.9-16.el9.x86_64.rpm
+          wget $BASEOS/u/utf8proc-2.6.1-3.el9.x86_64.rpm
+          wget $BASEOS/l/libzstd-1.5.2-7.el9.x86_64.rpm
+          wget $BASEOS/l/liblz4-1.9.3-5.el9.x86_64.rpm
 
       - name: Extract RPMs
         run: |
