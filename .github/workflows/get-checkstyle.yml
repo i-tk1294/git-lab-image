@@ -1,0 +1,37 @@
+name: Fetch Maven Checkstyle Plugin
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch-checkstyle-plugin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+
+      - name: Download maven-checkstyle-plugin
+        run: |
+          mvn dependency:get \
+            -DgroupId=com.puppycrawl.tools \
+            -DartifactId=checkstyle \
+            -Dversion=10.17.0
+
+          mvn dependency:get \
+            -DgroupId=org.apache.maven.plugins \
+            -DartifactId=maven-checkstyle-plugin \
+            -Dversion=3.3.1
+
+          # 取得した JAR を探してコピー
+          mkdir artifacts
+          find ~/.m2 -name "checkstyle-*.jar" -exec cp {} artifacts/ \;
+          find ~/.m2 -name "maven-checkstyle-plugin-*.jar" -exec cp {} artifacts/ \;
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-checkstyle-plugin
+          path: artifacts
