@@ -1,4 +1,4 @@
-name: build-svn-bundle-rel10
+name: build-svn-from-source
 
 on:
   workflow_dispatch:
@@ -8,45 +8,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install tools
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y dnf rpm2cpio cpio
+          sudo apt-get install -y \
+            build-essential \
+            libapr1-dev \
+            libaprutil1-dev \
+            libsqlite3-dev \
+            libserf-dev \
+            liblz4-dev \
+            libzstd-dev \
+            libutf8proc-dev \
+            wget \
+            unzip
 
-      - name: Enable RHEL10 repo (Rocky Linux 10 mirror)
+      - name: Download Subversion source
         run: |
-          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/
-          sudo dnf config-manager --add-repo https://download.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/
+          wget https://downloads.apache.org/subversion/subversion-1.14.3.tar.gz
+          tar xf subversion-1.14.3.tar.gz
 
-      - name: Download SVN and dependencies
+      - name: Build Subversion
         run: |
-          mkdir rpms
-          cd rpms
-          sudo dnf download \
-            subversion \
-            subversion-libs \
-            apr \
-            apr-util \
-            sqlite-libs \
-            serf \
-            utf8proc \
-            libzstd \
-            liblz4
+          cd subversion-1.14.3
+          ./configure --prefix=/opt/svn --without-gnome-keyring --without-kwallet
+          make -j$(nproc)
+          make install
 
-      - name: Extract RPMs
+      - name: Package SVN bundle
         run: |
-          mkdir -p svn_bundle
-          for f in rpms/*.rpm; do
-            rpm2cpio "$f" | cpio -idmv -D svn_bundle
-          done
-
-      - name: Zip bundle
-        run: |
-          cd svn_bundle
-          zip -r ../svn_bundle_rel10.zip .
+          cd /opt
+          zip -r svn_bundle_source.zip svn
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: svn-bundle-rel10
-          path: svn_bundle_rel10.zip
+          name: svn-bundle-source
+          path: /opt/svn_bundle_source.zip
