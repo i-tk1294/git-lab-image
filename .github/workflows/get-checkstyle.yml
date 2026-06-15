@@ -1,4 +1,4 @@
-name: Fetch Maven Checkstyle Plugin
+name: Fetch Checkstyle Plugin (offline)
 
 on:
   workflow_dispatch:
@@ -13,25 +13,45 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@v4
 
-      - name: Download maven-checkstyle-plugin
+      - name: Create dummy pom.xml
         run: |
-          mvn dependency:get \
-            -DgroupId=com.puppycrawl.tools \
-            -DartifactId=checkstyle \
-            -Dversion=10.17.0
+          cat << 'EOF' > pom.xml
+          <project xmlns="http://maven.apache.org/POM/4.0.0"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>dummy</groupId>
+            <artifactId>dummy</artifactId>
+            <version>1.0.0</version>
 
-          mvn dependency:get \
-            -DgroupId=org.apache.maven.plugins \
-            -DartifactId=maven-checkstyle-plugin \
-            -Dversion=3.3.1
+            <build>
+              <plugins>
+                <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-checkstyle-plugin</artifactId>
+                  <version>3.3.1</version>
+                </plugin>
+              </plugins>
+            </build>
+          </project>
+          EOF
 
-          # 取得した JAR を探してコピー
-          mkdir artifacts
-          find ~/.m2 -name "checkstyle-*.jar" -exec cp {} artifacts/ \;
-          find ~/.m2 -name "maven-checkstyle-plugin-*.jar" -exec cp {} artifacts/ \;
+      - name: Fetch all dependencies (plugin + checkstyle)
+        run: |
+          mvn dependency:go-offline -B
+
+      - name: Collect Checkstyle + Plugin jars only
+        run: |
+          mkdir deps
+          # Checkstyle 本体
+          cp ~/.m2/repository/com/puppycrawl/tools/checkstyle/*/*.jar deps/ || true
+          # Plugin 本体
+          cp ~/.m2/repository/org/apache/maven/plugins/maven-checkstyle-plugin/*/*.jar deps/ || true
+          # Plugin の依存ライブラリ
+          find ~/.m2/repository -path "*/maven-checkstyle-plugin/*" -prune -o -name "*.jar" -print | grep checkstyle | xargs -I{} cp {} deps/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: maven-checkstyle-plugin
-          path: artifacts
+          name: checkstyle-plugin-offline
+          path: deps
