@@ -1,4 +1,4 @@
-name: Fetch Checkstyle Plugin (offline)
+name: Fetch Checkstyle Plugin Repository
 
 on:
   workflow_dispatch:
@@ -36,22 +36,17 @@ jobs:
           </project>
           EOF
 
-      - name: Fetch all dependencies (plugin + checkstyle)
+      - name: Fetch full repository (pom + jars)
         run: |
           mvn dependency:go-offline -B
 
-      - name: Collect Checkstyle + Plugin jars only
+      - name: Collect repository
         run: |
-          mkdir deps
-          # Checkstyle 本体
-          cp ~/.m2/repository/com/puppycrawl/tools/checkstyle/*/*.jar deps/ || true
-          # Plugin 本体
-          cp ~/.m2/repository/org/apache/maven/plugins/maven-checkstyle-plugin/*/*.jar deps/ || true
-          # Plugin の依存ライブラリ
-          find ~/.m2/repository -path "*/maven-checkstyle-plugin/*" -prune -o -name "*.jar" -print | grep checkstyle | xargs -I{} cp {} deps/
+          mkdir repo
+          cp -r ~/.m2/repository repo/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: checkstyle-plugin-offline
-          path: deps
+          name: checkstyle-plugin-repository
+          path: repo
